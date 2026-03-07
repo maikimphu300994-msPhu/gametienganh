@@ -1,136 +1,126 @@
 const video = document.getElementById("video");
-const questionText = document.getElementById("question");
-const optionA = document.getElementById("optionA");
-const optionB = document.getElementById("optionB");
-const scoreEl = document.getElementById("score-board");
-const progressEl = document.getElementById("progress-text");
-const feedback = document.getElementById("feedback-overlay");
-const cursor = document.getElementById("tilt-cursor");
 const startBtn = document.getElementById("startBtn");
+const questionEl = document.getElementById("question");
+const textA = document.getElementById("textA");
+const textB = document.getElementById("textB");
+const boxA = document.getElementById("boxA");
+const boxB = document.getElementById("boxB");
+const msgEl = document.getElementById("message");
+const loading = document.getElementById("loading-overlay");
 
-let current = 0;
+let currentQ = 0;
 let score = 0;
-let lock = false;
-const SENSITIVITY = 12; // Độ nghiêng cần thiết (độ)
+let isLock = false;
 
-const questions = [
-    {q:"Yesterday I ___ to school", a:"go", b:"went", correct:"B"},
-    {q:"She ___ TV last night", a:"watched", b:"watch", correct:"A"},
-    {q:"They ___ football yesterday", a:"play", b:"played", correct:"B"},
-    {q:"We ___ dinner at 7pm", a:"eat", b:"ate", correct:"B"},
-    {q:"He ___ his homework", a:"did", b:"do", correct:"A"},
-    {q:"I ___ a movie yesterday", a:"saw", b:"see", correct:"A"},
-    {q:"She ___ a cake", a:"make", b:"made", correct:"B"},
-    {q:"They ___ to the park", a:"went", b:"go", correct:"A"},
-    {q:"We ___ English yesterday", a:"studied", b:"study", correct:"A"},
-    {q:"He ___ very fast", a:"run", b:"ran", correct:"B"}
+// Danh sách 20 câu hỏi Quá khứ đơn với 2 đáp án A - B
+const quizData = [
+    {q: "1. I ___ to the zoo yesterday.", a: "go", b: "went", c: "B"},
+    {q: "2. She ___ TV last night.", a: "watched", b: "watch", c: "A"},
+    {q: "3. They ___ football yesterday.", a: "play", b: "played", c: "B"},
+    {q: "4. We ___ pizza for dinner.", a: "ate", b: "eat", c: "A"},
+    {q: "5. He ___ his homework at 8 PM.", a: "did", b: "do", c: "A"},
+    {q: "6. My mom ___ a cake last Sunday.", a: "make", b: "made", c: "B"},
+    {q: "7. I ___ a movie last night.", a: "saw", b: "see", c: "A"},
+    {q: "8. We ___ English two days ago.", a: "studied", b: "study", c: "A"},
+    {q: "9. The cat ___ on the sofa.", a: "sleep", b: "slept", c: "B"},
+    {q: "10. They ___ to the beach by car.", a: "drove", b: "drive", c: "A"},
+    {q: "11. Yesterday, she ___ very happy.", a: "was", b: "is", c: "A"},
+    {q: "12. The birds ___ in the sky.", a: "fly", b: "flew", c: "B"},
+    {q: "13. I ___ my keys this morning.", a: "lost", b: "lose", c: "A"},
+    {q: "14. He ___ a letter to his friend.", a: "wrote", b: "write", c: "A"},
+    {q: "15. We ___ the window yesterday.", a: "break", b: "broke", c: "B"},
+    {q: "16. They ___ a song at the party.", a: "sang", b: "sing", c: "A"},
+    {q: "17. I ___ a good book last week.", a: "read", b: "reads", c: "A"},
+    {q: "18. She ___ very fast in the race.", a: "run", b: "ran", c: "B"},
+    {q: "19. We ___ up early this morning.", a: "woke", b: "wake", c: "A"},
+    {q: "20. The teacher ___ us a story.", a: "told", b: "tell", c: "A"}
 ];
 
-// Âm thanh không cần file
-function playSound(type) {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-
-    if(type === 'correct') {
-        osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
-        osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.1);
-        gain.gain.fadeOut = 0.2;
-    } else {
-        osc.frequency.setValueAtTime(200, ctx.currentTime);
-        osc.frequency.linearRampToValueAtTime(100, ctx.currentTime + 0.2);
-    }
-
-    osc.start();
-    osc.stop(ctx.currentTime + 0.2);
-}
-
-function showQuestion() {
-    if(current >= questions.length) {
-        finishGame();
+function loadQuestion() {
+    if (currentQ >= quizData.length) {
+        questionEl.innerText = "Game Finished! Your Score: " + score;
+        textA.innerText = "WELL"; textB.innerText = "DONE!";
         return;
     }
-    const q = questions[current];
-    questionText.innerText = q.q;
-    optionA.innerText = q.a;
-    optionB.innerText = q.b;
-    progressEl.innerText = `Question: ${current + 1}/${questions.length}`;
+    const data = quizData[currentQ];
+    questionEl.innerText = data.q;
+    textA.innerText = data.a;
+    textB.innerText = data.b;
+    document.getElementById("progress").innerText = `Question: ${currentQ + 1}/20`;
     
-    // Đọc câu hỏi
-    const msg = new SpeechSynthesisUtterance(q.q.replace('___', 'blank'));
-    msg.lang = 'en-US';
+    // Đọc câu hỏi cho sinh động
+    const msg = new SpeechSynthesisUtterance(data.q.replace("___", "blank"));
+    msg.lang = "en-US";
     speechSynthesis.speak(msg);
 }
 
-function checkAnswer(choice) {
-    if(lock) return;
-    lock = true;
+function handleAnswer(choice) {
+    if (isLock) return;
+    isLock = true;
 
-    const isCorrect = choice === questions[current].correct;
-    if(isCorrect) {
+    const correct = quizData[currentQ].c;
+    
+    // Hiệu ứng khi chọn
+    if (choice === "A") boxA.classList.add("selected");
+    else boxB.classList.add("selected");
+
+    if (choice === correct) {
         score += 10;
-        scoreEl.innerText = `Score: ${score}`;
-        feedback.innerText = "CORRECT! 🎉";
-        feedback.style.color = "#4caf50";
-        playSound('correct');
+        msgEl.innerText = "CORRECT! 🎉";
+        msgEl.style.color = "#2ecc71";
     } else {
-        feedback.innerText = "WRONG! ❌";
-        feedback.style.color = "#f44336";
-        playSound('wrong');
+        msgEl.innerText = "WRONG! ❌";
+        msgEl.style.color = "#e74c3c";
     }
 
+    document.getElementById("score").innerText = `Score: ${score}`;
+
     setTimeout(() => {
-        feedback.innerText = "";
-        current++;
-        lock = false;
-        showQuestion();
-    }, 1500);
+        currentQ++;
+        msgEl.innerText = "";
+        boxA.classList.remove("selected");
+        boxB.classList.remove("selected");
+        isLock = false;
+        loadQuestion();
+    }, 2000);
 }
 
-function finishGame() {
-    questionText.innerText = `Game Over! Final Score: ${score}`;
-    document.querySelector('.options-container').style.display = 'none';
-    const msg = new SpeechSynthesisUtterance("Congratulations! You finished the game.");
-    speechSynthesis.speak(msg);
-}
+// Khởi tạo nhận diện FaceMesh
+const faceMesh = new FaceMesh({
+    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+});
+
+faceMesh.setOptions({
+    maxNumFaces: 1,
+    refineLandmarks: true,
+    minDetectionConfidence: 0.5,
+    minTrackingConfidence: 0.5
+});
+
+faceMesh.onResults((results) => {
+    loading.style.display = "none";
+    if (!results.multiFaceLandmarks || isLock) return;
+
+    const landmarks = results.multiFaceLandmarks[0];
+    const leftEye = landmarks[33];
+    const rightEye = landmarks[263];
+
+    const dy = rightEye.y - leftEye.y;
+    const dx = rightEye.x - leftEye.x;
+    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+    // Ngưỡng nghiêng để xác nhận đáp án
+    if (angle > 12) handleAnswer("B"); // Nghiêng phải chọn B
+    if (angle < -12) handleAnswer("A"); // Nghiêng trái chọn A
+});
 
 async function init() {
-    const faceMesh = new FaceMesh({
-        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
-    });
-
-    faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5 });
-
-    faceMesh.onResults(results => {
-        if (!results.multiFaceLandmarks || lock) return;
-        
-        const landmarks = results.multiFaceLandmarks[0];
-        const leftEye = landmarks[33];
-        const rightEye = landmarks[263];
-        
-        // Tính góc nghiêng (đảo ngược lại vì camera mirror)
-        const angle = Math.atan2(rightEye.y - leftEye.y, rightEye.x - leftEye.x) * 180 / Math.PI;
-        
-        // Cập nhật thanh trượt trực quan
-        const offset = Math.max(-30, Math.min(30, angle));
-        cursor.style.left = `${50 + (offset * 1.5)}%`;
-
-        if (angle > SENSITIVITY) {
-            document.getElementById('btnB').classList.add('active-B');
-            checkAnswer("B");
-            setTimeout(() => document.getElementById('btnB').classList.remove('active-B'), 500);
-        } else if (angle < -SENSITIVITY) {
-            document.getElementById('btnA').classList.add('active-A');
-            checkAnswer("A");
-            setTimeout(() => document.getElementById('btnA').classList.remove('active-A'), 500);
-        }
-    });
-
     const camera = new Camera(video, {
-        onFrame: async () => { await faceMesh.send({image: video}); },
-        width: 640, height: 480
+        onFrame: async () => {
+            await faceMesh.send({image: video});
+        },
+        width: 640,
+        height: 480
     });
     camera.start();
 }
@@ -138,5 +128,5 @@ async function init() {
 startBtn.onclick = () => {
     startBtn.style.display = "none";
     init();
-    showQuestion();
+    loadQuestion();
 };
