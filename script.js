@@ -12,6 +12,7 @@ let currentQ = 0;
 let score = 0;
 let isLock = false;
 
+// BỘ CÂU HỎI
 const quizData = [
     {q: "1. I ___ to the zoo yesterday.", a: "go", b: "went", c: "B"},
     {q: "2. She ___ TV last night.", a: "watched", b: "watch", c: "A"},
@@ -35,27 +36,21 @@ const quizData = [
     {q: "20. The teacher ___ us a story.", a: "told", b: "tell", c: "A"}
 ];
 
-// Hàm "reo hò" bằng giọng nói máy tính
-function cheer(status) {
-    const speech = new SpeechSynthesisUtterance();
-    speech.lang = "en-US";
-    if (status === 'correct') {
-        speech.text = "Yeah! Excellent!";
-        speech.pitch = 1.5; // Giọng cao, phấn khích
-        speech.rate = 1.2;
-    } else {
-        speech.text = "Oh no! Wrong!";
-        speech.pitch = 0.5; // Giọng trầm, buồn
-        speech.rate = 0.8;
-    }
-    window.speechSynthesis.speak(speech);
+// HÀM PHÁT ÂM THANH "YEAH" VÀ "WRONG"
+function speakResult(text, isExcellent) {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'en-US';
+    utterance.pitch = isExcellent ? 1.5 : 0.5;
+    utterance.rate = isExcellent ? 1.2 : 0.8;
+    window.speechSynthesis.cancel(); // Xóa các câu đang đọc dở
+    window.speechSynthesis.speak(utterance);
 }
 
 function loadQuestion() {
     if (currentQ >= quizData.length) {
         questionEl.innerText = "GAME FINISHED!";
         textA.innerText = "FINAL"; textB.innerText = "SCORE: " + score;
-        msgEl.innerText = "WELL DONE! 🏆";
+        msgEl.innerText = "YOU ARE AMAZING! 🏆";
         return;
     }
     const data = quizData[currentQ];
@@ -63,11 +58,6 @@ function loadQuestion() {
     textA.innerText = data.a;
     textB.innerText = data.b;
     document.getElementById("progress").innerText = `Question: ${currentQ + 1}/20`;
-    
-    // Đọc câu hỏi
-    const msg = new SpeechSynthesisUtterance(data.q.replace("___", "blank"));
-    msg.lang = "en-US";
-    window.speechSynthesis.speak(msg);
 }
 
 function handleAnswer(choice) {
@@ -83,13 +73,13 @@ function handleAnswer(choice) {
         selectedBox.style.color = "white";
         msgEl.innerText = "EXCELLENT! 🌟";
         msgEl.style.color = "#2ecc71";
-        cheer('correct'); // Reo hò Yeah Excellent
+        speakResult("Yeah! Excellent", true); // MÁY NÓI YEAH EXCELLENT
     } else {
         selectedBox.style.background = "#e74c3c";
         selectedBox.style.color = "white";
         msgEl.innerText = "WRONG! ❌";
         msgEl.style.color = "#e74c3c";
-        cheer('wrong'); // Nói Oh no Wrong
+        speakResult("Oh no, wrong", false); // MÁY NÓI WRONG
     }
 
     document.getElementById("score").innerText = `Score: ${score}`;
@@ -97,15 +87,14 @@ function handleAnswer(choice) {
     setTimeout(() => {
         currentQ++;
         msgEl.innerText = "";
-        boxA.style.background = ""; 
-        boxB.style.background = "";
-        boxA.style.color = "";
-        boxB.style.color = "";
+        boxA.style.background = ""; boxB.style.background = "";
+        boxA.style.color = ""; boxB.style.color = "";
         isLock = false;
         loadQuestion();
-    }, 2000); 
+    }, 2000);
 }
 
+// KHỞI TẠO FACEMESH
 const faceMesh = new FaceMesh({
     locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
 });
@@ -120,9 +109,7 @@ faceMesh.onResults((results) => {
     const landmarks = results.multiFaceLandmarks[0];
     const leftEye = landmarks[33];
     const rightEye = landmarks[263];
-    const dy = rightEye.y - leftEye.y;
-    const dx = rightEye.x - leftEye.x;
-    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+    const angle = Math.atan2(rightEye.y - leftEye.y, rightEye.x - leftEye.x) * 180 / Math.PI;
 
     if (angle < -12) handleAnswer("B"); 
     if (angle > 12) handleAnswer("A");
@@ -137,6 +124,11 @@ async function init() {
 }
 
 startBtn.onclick = () => {
+    // Đánh thức hệ thống giọng nói ngay khi bấm Start
+    const wakeup = new SpeechSynthesisUtterance("Start");
+    wakeup.volume = 0;
+    window.speechSynthesis.speak(wakeup);
+    
     startBtn.style.display = "none";
     init();
     loadQuestion();
