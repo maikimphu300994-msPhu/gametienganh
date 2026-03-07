@@ -11,6 +11,7 @@ const loading = document.getElementById("loading-overlay");
 let currentQ = 0;
 let score = 0;
 let isLock = false;
+let audioCtx; // Biến âm thanh dùng chung
 
 const quizData = [
     {q: "1. I ___ to the zoo yesterday.", a: "go", b: "went", c: "B"},
@@ -35,9 +36,18 @@ const quizData = [
     {q: "20. The teacher ___ us a story.", a: "told", b: "tell", c: "A"}
 ];
 
-// Hàm tạo âm thanh (Không cần file mp3)
+// Hàm khởi tạo hệ thống âm thanh ngay khi bấm nút Start
+function initAudio() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+}
+
 function playSound(type) {
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (!audioCtx) return;
     const oscillator = audioCtx.createOscillator();
     const gainNode = audioCtx.createGain();
 
@@ -46,20 +56,20 @@ function playSound(type) {
 
     if (type === 'correct') {
         oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
-        oscillator.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.1); // A5
-        gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+        oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime); 
+        oscillator.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.1); 
+        gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
         gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
         oscillator.start();
         oscillator.stop(audioCtx.currentTime + 0.5);
     } else {
         oscillator.type = 'sawtooth';
         oscillator.frequency.setValueAtTime(150, audioCtx.currentTime);
-        oscillator.frequency.linearRampToValueAtTime(50, audioCtx.currentTime + 0.3);
-        gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
-        gainNode.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+        oscillator.frequency.linearRampToValueAtTime(70, audioCtx.currentTime + 0.4);
+        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
         oscillator.start();
-        oscillator.stop(audioCtx.currentTime + 0.3);
+        oscillator.stop(audioCtx.currentTime + 0.4);
     }
 }
 
@@ -68,7 +78,6 @@ function loadQuestion() {
         questionEl.innerText = "GAME FINISHED!";
         textA.innerText = "FINAL"; textB.innerText = "SCORE: " + score;
         msgEl.innerText = "CONGRATULATIONS! 🏆";
-        msgEl.style.color = "#f1c40f";
         return;
     }
     const data = quizData[currentQ];
@@ -77,9 +86,10 @@ function loadQuestion() {
     textB.innerText = data.b;
     document.getElementById("progress").innerText = `Question: ${currentQ + 1}/20`;
     
+    // Đọc câu hỏi
     const msg = new SpeechSynthesisUtterance(data.q.replace("___", "blank"));
     msg.lang = "en-US";
-    speechSynthesis.speak(msg);
+    window.speechSynthesis.speak(msg);
 }
 
 function handleAnswer(choice) {
@@ -95,13 +105,13 @@ function handleAnswer(choice) {
         selectedBox.style.color = "white";
         msgEl.innerText = "EXCELLENT! 🌟";
         msgEl.style.color = "#2ecc71";
-        playSound('correct'); // Phát âm thanh đúng
+        playSound('correct'); 
     } else {
         selectedBox.style.background = "#e74c3c";
         selectedBox.style.color = "white";
         msgEl.innerText = "WRONG! ❌";
         msgEl.style.color = "#e74c3c";
-        playSound('wrong'); // Phát âm thanh sai
+        playSound('wrong'); 
     }
 
     document.getElementById("score").innerText = `Score: ${score}`;
@@ -123,10 +133,7 @@ const faceMesh = new FaceMesh({
 });
 
 faceMesh.setOptions({
-    maxNumFaces: 1,
-    refineLandmarks: true,
-    minDetectionConfidence: 0.6,
-    minTrackingConfidence: 0.6
+    maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6
 });
 
 faceMesh.onResults((results) => {
@@ -141,7 +148,6 @@ faceMesh.onResults((results) => {
     const dx = rightEye.x - leftEye.x;
     const angle = Math.atan2(dy, dx) * 180 / Math.PI;
 
-    // Đã đảo bên cho khớp với gương
     if (angle < -12) handleAnswer("B"); 
     if (angle > 12) handleAnswer("A");
 });
@@ -155,6 +161,7 @@ async function init() {
 }
 
 startBtn.onclick = () => {
+    initAudio(); // Kích hoạt âm thanh ngay khi bấm nút
     startBtn.style.display = "none";
     init();
     loadQuestion();
