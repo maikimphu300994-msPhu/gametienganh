@@ -11,7 +11,10 @@ const loading = document.getElementById("loading-overlay");
 let currentQ = 0;
 let score = 0;
 let isLock = false;
-let audioCtx; // Biến âm thanh dùng chung
+
+// Link âm thanh thực tế (MP3)
+const soundCorrect = new Audio("https://www.myinstants.com/media/sounds/success-fanfare-trumpets.mp3");
+const soundWrong = new Audio("https://www.myinstants.com/media/sounds/wrong-answer-sound-effect.mp3");
 
 const quizData = [
     {q: "1. I ___ to the zoo yesterday.", a: "go", b: "went", c: "B"},
@@ -36,43 +39,6 @@ const quizData = [
     {q: "20. The teacher ___ us a story.", a: "told", b: "tell", c: "A"}
 ];
 
-// Hàm khởi tạo hệ thống âm thanh ngay khi bấm nút Start
-function initAudio() {
-    if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-    }
-}
-
-function playSound(type) {
-    if (!audioCtx) return;
-    const oscillator = audioCtx.createOscillator();
-    const gainNode = audioCtx.createGain();
-
-    oscillator.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
-
-    if (type === 'correct') {
-        oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime); 
-        oscillator.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.1); 
-        gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-        oscillator.start();
-        oscillator.stop(audioCtx.currentTime + 0.5);
-    } else {
-        oscillator.type = 'sawtooth';
-        oscillator.frequency.setValueAtTime(150, audioCtx.currentTime);
-        oscillator.frequency.linearRampToValueAtTime(70, audioCtx.currentTime + 0.4);
-        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-        gainNode.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
-        oscillator.start();
-        oscillator.stop(audioCtx.currentTime + 0.4);
-    }
-}
-
 function loadQuestion() {
     if (currentQ >= quizData.length) {
         questionEl.innerText = "GAME FINISHED!";
@@ -86,7 +52,7 @@ function loadQuestion() {
     textB.innerText = data.b;
     document.getElementById("progress").innerText = `Question: ${currentQ + 1}/20`;
     
-    // Đọc câu hỏi
+    // Đọc câu hỏi tiếng Anh
     const msg = new SpeechSynthesisUtterance(data.q.replace("___", "blank"));
     msg.lang = "en-US";
     window.speechSynthesis.speak(msg);
@@ -105,13 +71,13 @@ function handleAnswer(choice) {
         selectedBox.style.color = "white";
         msgEl.innerText = "EXCELLENT! 🌟";
         msgEl.style.color = "#2ecc71";
-        playSound('correct'); 
+        soundCorrect.play().catch(e => console.log("Audio play error")); // Chạy âm thanh đúng
     } else {
         selectedBox.style.background = "#e74c3c";
         selectedBox.style.color = "white";
         msgEl.innerText = "WRONG! ❌";
         msgEl.style.color = "#e74c3c";
-        playSound('wrong'); 
+        soundWrong.play().catch(e => console.log("Audio play error")); // Chạy âm thanh sai
     }
 
     document.getElementById("score").innerText = `Score: ${score}`;
@@ -125,7 +91,7 @@ function handleAnswer(choice) {
         boxB.style.color = "";
         isLock = false;
         loadQuestion();
-    }, 1500);
+    }, 2000); // Tăng thời gian lên 2s để nghe hết tiếng nhạc
 }
 
 const faceMesh = new FaceMesh({
@@ -148,6 +114,7 @@ faceMesh.onResults((results) => {
     const dx = rightEye.x - leftEye.x;
     const angle = Math.atan2(dy, dx) * 180 / Math.PI;
 
+    // Fix ngược bên gương
     if (angle < -12) handleAnswer("B"); 
     if (angle > 12) handleAnswer("A");
 });
@@ -161,7 +128,9 @@ async function init() {
 }
 
 startBtn.onclick = () => {
-    initAudio(); // Kích hoạt âm thanh ngay khi bấm nút
+    // Ép trình duyệt load âm thanh trước
+    soundCorrect.load();
+    soundWrong.load();
     startBtn.style.display = "none";
     init();
     loadQuestion();
