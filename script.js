@@ -12,9 +12,9 @@ let currentQ = 0;
 let score = 0;
 let isLock = false;
 
-// Link âm thanh thực tế (MP3)
-const soundCorrect = new Audio("https://www.myinstants.com/media/sounds/success-fanfare-trumpets.mp3");
-const soundWrong = new Audio("https://www.myinstants.com/media/sounds/wrong-answer-sound-effect.mp3");
+// BỘ LINK ÂM THANH MỚI - SIÊU ỔN ĐỊNH
+const soundCorrect = new Audio("https://actions.google.com/sounds/v1/cartoon/clink_clank.ogg"); 
+const soundWrong = new Audio("https://actions.google.com/sounds/v1/cartoon/boing.ogg");
 
 const quizData = [
     {q: "1. I ___ to the zoo yesterday.", a: "go", b: "went", c: "B"},
@@ -52,7 +52,6 @@ function loadQuestion() {
     textB.innerText = data.b;
     document.getElementById("progress").innerText = `Question: ${currentQ + 1}/20`;
     
-    // Đọc câu hỏi tiếng Anh
     const msg = new SpeechSynthesisUtterance(data.q.replace("___", "blank"));
     msg.lang = "en-US";
     window.speechSynthesis.speak(msg);
@@ -71,13 +70,17 @@ function handleAnswer(choice) {
         selectedBox.style.color = "white";
         msgEl.innerText = "EXCELLENT! 🌟";
         msgEl.style.color = "#2ecc71";
-        soundCorrect.play().catch(e => console.log("Audio play error")); // Chạy âm thanh đúng
+        // Chạy âm thanh đúng
+        soundCorrect.currentTime = 0; 
+        soundCorrect.play().catch(e => console.log("Audio Error"));
     } else {
         selectedBox.style.background = "#e74c3c";
         selectedBox.style.color = "white";
         msgEl.innerText = "WRONG! ❌";
         msgEl.style.color = "#e74c3c";
-        soundWrong.play().catch(e => console.log("Audio play error")); // Chạy âm thanh sai
+        // Chạy âm thanh sai
+        soundWrong.currentTime = 0;
+        soundWrong.play().catch(e => console.log("Audio Error"));
     }
 
     document.getElementById("score").innerText = `Score: ${score}`;
@@ -91,7 +94,7 @@ function handleAnswer(choice) {
         boxB.style.color = "";
         isLock = false;
         loadQuestion();
-    }, 2000); // Tăng thời gian lên 2s để nghe hết tiếng nhạc
+    }, 2000); 
 }
 
 const faceMesh = new FaceMesh({
@@ -114,7 +117,6 @@ faceMesh.onResults((results) => {
     const dx = rightEye.x - leftEye.x;
     const angle = Math.atan2(dy, dx) * 180 / Math.PI;
 
-    // Fix ngược bên gương
     if (angle < -12) handleAnswer("B"); 
     if (angle > 12) handleAnswer("A");
 });
@@ -128,9 +130,9 @@ async function init() {
 }
 
 startBtn.onclick = () => {
-    // Ép trình duyệt load âm thanh trước
-    soundCorrect.load();
-    soundWrong.load();
+    // Kích hoạt loa ngay khi bấm Start
+    soundCorrect.play().then(() => soundCorrect.pause());
+    soundWrong.play().then(() => soundWrong.pause());
     startBtn.style.display = "none";
     init();
     loadQuestion();
