@@ -12,6 +12,7 @@ let currentQ = 0;
 let score = 0;
 let isLock = false;
 
+// 20 câu hỏi Quá khứ đơn chuẩn
 const quizData = [
     {q: "1. I ___ to the zoo yesterday.", a: "go", b: "went", c: "B"},
     {q: "2. She ___ TV last night.", a: "watched", b: "watch", c: "A"},
@@ -39,6 +40,8 @@ function loadQuestion() {
     if (currentQ >= quizData.length) {
         questionEl.innerText = "GAME FINISHED!";
         textA.innerText = "FINAL"; textB.innerText = "SCORE: " + score;
+        msgEl.innerText = "CONGRATULATIONS! 🏆";
+        msgEl.style.color = "#f1c40f";
         return;
     }
     const data = quizData[currentQ];
@@ -47,6 +50,7 @@ function loadQuestion() {
     textB.innerText = data.b;
     document.getElementById("progress").innerText = `Question: ${currentQ + 1}/20`;
     
+    // Đọc câu hỏi tiếng Anh
     const msg = new SpeechSynthesisUtterance(data.q.replace("___", "blank"));
     msg.lang = "en-US";
     speechSynthesis.speak(msg);
@@ -61,22 +65,27 @@ function handleAnswer(choice) {
 
     if (choice === correct) {
         score += 10;
-        selectedBox.style.background = "#2ecc71"; // Màu xanh lá khi đúng
-        msgEl.innerText = "CORRECT! 🎉";
+        selectedBox.style.background = "#2ecc71"; // Xanh lá khi đúng
+        selectedBox.style.color = "white";
+        msgEl.innerText = "EXCELLENT! 🌟";
         msgEl.style.color = "#2ecc71";
     } else {
-        selectedBox.style.background = "#e74c3c"; // Màu đỏ khi sai
+        selectedBox.style.background = "#e74c3c"; // Đỏ khi sai
+        selectedBox.style.color = "white";
         msgEl.innerText = "WRONG! ❌";
         msgEl.style.color = "#e74c3c";
     }
 
     document.getElementById("score").innerText = `Score: ${score}`;
 
+    // Tạm dừng 1.5 giây để học sinh thấy kết quả trước khi sang câu mới
     setTimeout(() => {
         currentQ++;
         msgEl.innerText = "";
-        boxA.style.background = ""; // Reset màu
+        boxA.style.background = ""; // Reset màu về mặc định
         boxB.style.background = "";
+        boxA.style.color = "";
+        boxB.style.color = "";
         isLock = false;
         loadQuestion();
     }, 1500);
@@ -89,8 +98,8 @@ const faceMesh = new FaceMesh({
 faceMesh.setOptions({
     maxNumFaces: 1,
     refineLandmarks: true,
-    minDetectionConfidence: 0.5,
-    minTrackingConfidence: 0.5
+    minDetectionConfidence: 0.6,
+    minTrackingConfidence: 0.6
 });
 
 faceMesh.onResults((results) => {
@@ -101,11 +110,12 @@ faceMesh.onResults((results) => {
     const leftEye = landmarks[33];
     const rightEye = landmarks[263];
 
+    // Tính toán góc nghiêng giữa 2 mắt
     const dy = rightEye.y - leftEye.y;
     const dx = rightEye.x - leftEye.x;
     const angle = Math.atan2(dy, dx) * 180 / Math.PI;
 
-    // ĐÃ FIX NGƯỢC BÊN: Nghiêng đầu sang vai nào chọn bên đó
+    // FIX NGƯỢC BÊN: Nghiêng đầu sang trái màn hình (vai trái học sinh) chọn A, phải chọn B
     if (angle < -12) handleAnswer("B"); 
     if (angle > 12) handleAnswer("A");
 });
