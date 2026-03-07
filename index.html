@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Past - Head Tilt Challenge</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+</head>
+<body>
+    <div class="game-wrapper">
+        <div class="header">
+            <div id="score-board">Score: 0</div>
+            <div id="progress-text">Question: 1/25</div>
+        </div>
+
+        <div class="main-display">
+            <div class="video-container">
+                <video id="video" autoplay playsinline></video>
+                <div id="tilt-indicator">
+                    <div id="tilt-cursor"></div>
+                </div>
+            </div>
+
+            <div class="quiz-section">
+                <div class="question-card">
+                    <p id="question">Ready to start?</p>
+                </div>
+                
+                <div class="options-container">
+                    <div class="option-btn left" id="btnA">
+                        <span class="arrow">⬅ A</span>
+                        <p id="optionA">-</p>
+                    </div>
+                    <div class="option-btn right" id="btnB">
+                        <span class="arrow">B ➡</span>
+                        <p id="optionB">-</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="feedback-overlay"></div>
+        <button id="startBtn">START GAME 🎮</button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
