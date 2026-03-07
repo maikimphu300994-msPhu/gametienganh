@@ -12,8 +12,8 @@ let currentQ = 0;
 let score = 0;
 let isLock = false;
 
-// BỘ LINK ÂM THANH MỚI - SIÊU ỔN ĐỊNH
-const soundCorrect = new Audio("https://actions.google.com/sounds/v1/cartoon/clink_clank.ogg"); 
+// Cấu hình âm thanh: YEAH cho đúng và BOING cho sai
+const soundExcellent = new Audio("https://www.myinstants.com/media/sounds/children-yeah-sound-effect.mp3");
 const soundWrong = new Audio("https://actions.google.com/sounds/v1/cartoon/boing.ogg");
 
 const quizData = [
@@ -70,15 +70,17 @@ function handleAnswer(choice) {
         selectedBox.style.color = "white";
         msgEl.innerText = "EXCELLENT! 🌟";
         msgEl.style.color = "#2ecc71";
-        // Chạy âm thanh đúng
-        soundCorrect.currentTime = 0; 
-        soundCorrect.play().catch(e => console.log("Audio Error"));
+        
+        // Phát tiếng YEAH
+        soundExcellent.currentTime = 0;
+        soundExcellent.play().catch(e => console.log("Audio Error"));
     } else {
         selectedBox.style.background = "#e74c3c";
         selectedBox.style.color = "white";
         msgEl.innerText = "WRONG! ❌";
         msgEl.style.color = "#e74c3c";
-        // Chạy âm thanh sai
+        
+        // Phát tiếng BOING
         soundWrong.currentTime = 0;
         soundWrong.play().catch(e => console.log("Audio Error"));
     }
@@ -130,9 +132,9 @@ async function init() {
 }
 
 startBtn.onclick = () => {
-    // Kích hoạt loa ngay khi bấm Start
-    soundCorrect.play().then(() => soundCorrect.pause());
-    soundWrong.play().then(() => soundWrong.pause());
+    // Đánh thức âm thanh ngay khi bấm Start
+    soundExcellent.play().then(() => soundExcellent.pause()).catch(e => {});
+    soundWrong.play().then(() => soundWrong.pause()).catch(e => {});
     startBtn.style.display = "none";
     init();
     loadQuestion();
