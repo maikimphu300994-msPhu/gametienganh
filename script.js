@@ -12,7 +12,6 @@ let currentQ = 0;
 let score = 0;
 let isLock = false;
 
-// Danh sách 20 câu hỏi Quá khứ đơn với 2 đáp án A - B
 const quizData = [
     {q: "1. I ___ to the zoo yesterday.", a: "go", b: "went", c: "B"},
     {q: "2. She ___ TV last night.", a: "watched", b: "watch", c: "A"},
@@ -38,8 +37,8 @@ const quizData = [
 
 function loadQuestion() {
     if (currentQ >= quizData.length) {
-        questionEl.innerText = "Game Finished! Your Score: " + score;
-        textA.innerText = "WELL"; textB.innerText = "DONE!";
+        questionEl.innerText = "GAME FINISHED!";
+        textA.innerText = "FINAL"; textB.innerText = "SCORE: " + score;
         return;
     }
     const data = quizData[currentQ];
@@ -48,7 +47,6 @@ function loadQuestion() {
     textB.innerText = data.b;
     document.getElementById("progress").innerText = `Question: ${currentQ + 1}/20`;
     
-    // Đọc câu hỏi cho sinh động
     const msg = new SpeechSynthesisUtterance(data.q.replace("___", "blank"));
     msg.lang = "en-US";
     speechSynthesis.speak(msg);
@@ -59,16 +57,15 @@ function handleAnswer(choice) {
     isLock = true;
 
     const correct = quizData[currentQ].c;
-    
-    // Hiệu ứng khi chọn
-    if (choice === "A") boxA.classList.add("selected");
-    else boxB.classList.add("selected");
+    const selectedBox = (choice === "A") ? boxA : boxB;
 
     if (choice === correct) {
         score += 10;
+        selectedBox.style.background = "#2ecc71"; // Màu xanh lá khi đúng
         msgEl.innerText = "CORRECT! 🎉";
         msgEl.style.color = "#2ecc71";
     } else {
+        selectedBox.style.background = "#e74c3c"; // Màu đỏ khi sai
         msgEl.innerText = "WRONG! ❌";
         msgEl.style.color = "#e74c3c";
     }
@@ -78,14 +75,13 @@ function handleAnswer(choice) {
     setTimeout(() => {
         currentQ++;
         msgEl.innerText = "";
-        boxA.classList.remove("selected");
-        boxB.classList.remove("selected");
+        boxA.style.background = ""; // Reset màu
+        boxB.style.background = "";
         isLock = false;
         loadQuestion();
-    }, 2000);
+    }, 1500);
 }
 
-// Khởi tạo nhận diện FaceMesh
 const faceMesh = new FaceMesh({
     locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
 });
@@ -109,18 +105,15 @@ faceMesh.onResults((results) => {
     const dx = rightEye.x - leftEye.x;
     const angle = Math.atan2(dy, dx) * 180 / Math.PI;
 
-    // Ngưỡng nghiêng để xác nhận đáp án
-    if (angle > 12) handleAnswer("B"); // Nghiêng phải chọn B
-    if (angle < -12) handleAnswer("A"); // Nghiêng trái chọn A
+    // ĐÃ FIX NGƯỢC BÊN: Nghiêng đầu sang vai nào chọn bên đó
+    if (angle < -12) handleAnswer("B"); 
+    if (angle > 12) handleAnswer("A");
 });
 
 async function init() {
     const camera = new Camera(video, {
-        onFrame: async () => {
-            await faceMesh.send({image: video});
-        },
-        width: 640,
-        height: 480
+        onFrame: async () => { await faceMesh.send({image: video}); },
+        width: 640, height: 480
     });
     camera.start();
 }
