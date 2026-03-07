@@ -12,7 +12,6 @@ let currentQ = 0;
 let score = 0;
 let isLock = false;
 
-// 20 câu hỏi Quá khứ đơn chuẩn
 const quizData = [
     {q: "1. I ___ to the zoo yesterday.", a: "go", b: "went", c: "B"},
     {q: "2. She ___ TV last night.", a: "watched", b: "watch", c: "A"},
@@ -36,6 +35,34 @@ const quizData = [
     {q: "20. The teacher ___ us a story.", a: "told", b: "tell", c: "A"}
 ];
 
+// Hàm tạo âm thanh (Không cần file mp3)
+function playSound(type) {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    if (type === 'correct') {
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+        oscillator.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.1); // A5
+        gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.5);
+    } else {
+        oscillator.type = 'sawtooth';
+        oscillator.frequency.setValueAtTime(150, audioCtx.currentTime);
+        oscillator.frequency.linearRampToValueAtTime(50, audioCtx.currentTime + 0.3);
+        gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.3);
+    }
+}
+
 function loadQuestion() {
     if (currentQ >= quizData.length) {
         questionEl.innerText = "GAME FINISHED!";
@@ -50,7 +77,6 @@ function loadQuestion() {
     textB.innerText = data.b;
     document.getElementById("progress").innerText = `Question: ${currentQ + 1}/20`;
     
-    // Đọc câu hỏi tiếng Anh
     const msg = new SpeechSynthesisUtterance(data.q.replace("___", "blank"));
     msg.lang = "en-US";
     speechSynthesis.speak(msg);
@@ -65,24 +91,25 @@ function handleAnswer(choice) {
 
     if (choice === correct) {
         score += 10;
-        selectedBox.style.background = "#2ecc71"; // Xanh lá khi đúng
+        selectedBox.style.background = "#2ecc71";
         selectedBox.style.color = "white";
         msgEl.innerText = "EXCELLENT! 🌟";
         msgEl.style.color = "#2ecc71";
+        playSound('correct'); // Phát âm thanh đúng
     } else {
-        selectedBox.style.background = "#e74c3c"; // Đỏ khi sai
+        selectedBox.style.background = "#e74c3c";
         selectedBox.style.color = "white";
         msgEl.innerText = "WRONG! ❌";
         msgEl.style.color = "#e74c3c";
+        playSound('wrong'); // Phát âm thanh sai
     }
 
     document.getElementById("score").innerText = `Score: ${score}`;
 
-    // Tạm dừng 1.5 giây để học sinh thấy kết quả trước khi sang câu mới
     setTimeout(() => {
         currentQ++;
         msgEl.innerText = "";
-        boxA.style.background = ""; // Reset màu về mặc định
+        boxA.style.background = ""; 
         boxB.style.background = "";
         boxA.style.color = "";
         boxB.style.color = "";
@@ -110,12 +137,11 @@ faceMesh.onResults((results) => {
     const leftEye = landmarks[33];
     const rightEye = landmarks[263];
 
-    // Tính toán góc nghiêng giữa 2 mắt
     const dy = rightEye.y - leftEye.y;
     const dx = rightEye.x - leftEye.x;
     const angle = Math.atan2(dy, dx) * 180 / Math.PI;
 
-    // FIX NGƯỢC BÊN: Nghiêng đầu sang trái màn hình (vai trái học sinh) chọn A, phải chọn B
+    // Đã đảo bên cho khớp với gương
     if (angle < -12) handleAnswer("B"); 
     if (angle > 12) handleAnswer("A");
 });
