@@ -12,10 +12,6 @@ let currentQ = 0;
 let score = 0;
 let isLock = false;
 
-// Cấu hình âm thanh: YEAH cho đúng và BOING cho sai
-const soundExcellent = new Audio("https://www.myinstants.com/media/sounds/children-yeah-sound-effect.mp3");
-const soundWrong = new Audio("https://actions.google.com/sounds/v1/cartoon/boing.ogg");
-
 const quizData = [
     {q: "1. I ___ to the zoo yesterday.", a: "go", b: "went", c: "B"},
     {q: "2. She ___ TV last night.", a: "watched", b: "watch", c: "A"},
@@ -39,11 +35,27 @@ const quizData = [
     {q: "20. The teacher ___ us a story.", a: "told", b: "tell", c: "A"}
 ];
 
+// Hàm "reo hò" bằng giọng nói máy tính
+function cheer(status) {
+    const speech = new SpeechSynthesisUtterance();
+    speech.lang = "en-US";
+    if (status === 'correct') {
+        speech.text = "Yeah! Excellent!";
+        speech.pitch = 1.5; // Giọng cao, phấn khích
+        speech.rate = 1.2;
+    } else {
+        speech.text = "Oh no! Wrong!";
+        speech.pitch = 0.5; // Giọng trầm, buồn
+        speech.rate = 0.8;
+    }
+    window.speechSynthesis.speak(speech);
+}
+
 function loadQuestion() {
     if (currentQ >= quizData.length) {
         questionEl.innerText = "GAME FINISHED!";
         textA.innerText = "FINAL"; textB.innerText = "SCORE: " + score;
-        msgEl.innerText = "CONGRATULATIONS! 🏆";
+        msgEl.innerText = "WELL DONE! 🏆";
         return;
     }
     const data = quizData[currentQ];
@@ -52,6 +64,7 @@ function loadQuestion() {
     textB.innerText = data.b;
     document.getElementById("progress").innerText = `Question: ${currentQ + 1}/20`;
     
+    // Đọc câu hỏi
     const msg = new SpeechSynthesisUtterance(data.q.replace("___", "blank"));
     msg.lang = "en-US";
     window.speechSynthesis.speak(msg);
@@ -70,19 +83,13 @@ function handleAnswer(choice) {
         selectedBox.style.color = "white";
         msgEl.innerText = "EXCELLENT! 🌟";
         msgEl.style.color = "#2ecc71";
-        
-        // Phát tiếng YEAH
-        soundExcellent.currentTime = 0;
-        soundExcellent.play().catch(e => console.log("Audio Error"));
+        cheer('correct'); // Reo hò Yeah Excellent
     } else {
         selectedBox.style.background = "#e74c3c";
         selectedBox.style.color = "white";
         msgEl.innerText = "WRONG! ❌";
         msgEl.style.color = "#e74c3c";
-        
-        // Phát tiếng BOING
-        soundWrong.currentTime = 0;
-        soundWrong.play().catch(e => console.log("Audio Error"));
+        cheer('wrong'); // Nói Oh no Wrong
     }
 
     document.getElementById("score").innerText = `Score: ${score}`;
@@ -110,11 +117,9 @@ faceMesh.setOptions({
 faceMesh.onResults((results) => {
     loading.style.display = "none";
     if (!results.multiFaceLandmarks || isLock) return;
-
     const landmarks = results.multiFaceLandmarks[0];
     const leftEye = landmarks[33];
     const rightEye = landmarks[263];
-
     const dy = rightEye.y - leftEye.y;
     const dx = rightEye.x - leftEye.x;
     const angle = Math.atan2(dy, dx) * 180 / Math.PI;
@@ -132,9 +137,6 @@ async function init() {
 }
 
 startBtn.onclick = () => {
-    // Đánh thức âm thanh ngay khi bấm Start
-    soundExcellent.play().then(() => soundExcellent.pause()).catch(e => {});
-    soundWrong.play().then(() => soundWrong.pause()).catch(e => {});
     startBtn.style.display = "none";
     init();
     loadQuestion();
