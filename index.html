@@ -2,49 +2,45 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Past - Head Tilt Challenge</title>
+    <title>Simple Past Challenge - Ms. Phu</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="script.js" defer></script>
 </head>
 <body>
-    <div class="game-wrapper">
+    <div class="game-container">
         <div class="header">
-            <div id="score-board">Score: 0</div>
-            <div id="progress-text">Question: 1/25</div>
+            <div id="score">Điểm: 0</div>
+            <div id="progress">Câu hỏi: 1/20</div>
         </div>
 
-        <div class="main-display">
-            <div class="video-container">
-                <video id="video" autoplay playsinline></video>
-                <div id="tilt-indicator">
-                    <div id="tilt-cursor"></div>
-                </div>
+        <div class="camera-section">
+            <video id="video" autoplay playsinline></video>
+            <canvas id="output_canvas"></canvas>
+            <div id="tilt-guide">
+                <div id="guide-line"></div>
             </div>
+            <div id="loading-overlay">Đang tải bộ não nhận diện...</div>
+        </div>
 
-            <div class="quiz-section">
-                <div class="question-card">
-                    <p id="question">Ready to start?</p>
-                </div>
-                
-                <div class="options-container">
-                    <div class="option-btn left" id="btnA">
-                        <span class="arrow">⬅ A</span>
-                        <p id="optionA">-</p>
-                    </div>
-                    <div class="option-btn right" id="btnB">
-                        <span class="arrow">B ➡</span>
-                        <p id="optionB">-</p>
-                    </div>
-                </div>
+        <div class="question-card">
+            <h2 id="question">Bấm START để bắt đầu</h2>
+        </div>
+
+        <div class="options-container">
+            <div class="option-box left" id="boxA">
+                <span class="arrow">⬅ A</span>
+                <p id="textA">Đáp án A</p>
+            </div>
+            <div class="option-box right" id="boxB">
+                <span class="arrow">B ➡</span>
+                <p id="textB">Đáp án B</p>
             </div>
         </div>
 
-        <div id="feedback-overlay"></div>
-        <button id="startBtn">START GAME 🎮</button>
+        <div id="message"></div>
+        <button id="startBtn">START GAME 🚀</button>
     </div>
-
-    <script src="script.js"></script>
 </body>
 </html>
