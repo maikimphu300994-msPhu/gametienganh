@@ -36,14 +36,29 @@ const quizData = [
     {q: "20. The teacher ___ us a story.", a: "told", b: "tell", c: "A"}
 ];
 
-// HÀM PHÁT ÂM THANH "YEAH" VÀ "WRONG"
-function speakResult(text, isExcellent) {
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'en-US';
-    utterance.pitch = isExcellent ? 1.5 : 0.5;
-    utterance.rate = isExcellent ? 1.2 : 0.8;
-    window.speechSynthesis.cancel(); // Xóa các câu đang đọc dở
-    window.speechSynthesis.speak(utterance);
+function checkResult(isCorrect, score) {
+    if (isCorrect) {
+        if (score >= 90) { // Giả sử Excellent là trên 90 điểm
+            // Dừng các âm thanh đang phát để tránh bị đè tiếng
+            this.soundExcellent.pause();
+            this.soundExcellent.currentTime = 0;
+            
+            // Phát tiếng "Yeah" tung hô
+            this.soundExcellent.play();
+            
+            console.log("Hiệu ứng: Excellent! (Yeahhh)");
+        } else {
+            // Các âm thanh thắng lợi bình thường khác (nếu có)
+        }
+    } else {
+        // Giữ nguyên phần "è è" bạn đã thấy ok hôm qua
+        this.soundWrong.pause();
+        this.soundWrong.currentTime = 0;
+        this.soundWrong.play();
+        
+        console.log("Hiệu ứng: Wrong! (è è)");
+    }
+}
 }
 
 function loadQuestion() {
@@ -133,3 +148,4 @@ startBtn.onclick = () => {
     init();
     loadQuestion();
 };
+
