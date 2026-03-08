@@ -12,7 +12,10 @@ let currentQ = 0;
 let score = 0;
 let isLock = false;
 
-// BỘ CÂU HỎI
+// Link âm thanh thực tế (MP3)
+const soundCorrect = new Audio("https://www.myinstants.com/media/sounds/success-fanfare-trumpets.mp3");
+const soundWrong = new Audio("https://www.myinstants.com/media/sounds/wrong-answer-sound-effect.mp3");
+
 const quizData = [
     {q: "1. I ___ to the zoo yesterday.", a: "go", b: "went", c: "B"},
     {q: "2. She ___ TV last night.", a: "watched", b: "watch", c: "A"},
@@ -36,36 +39,11 @@ const quizData = [
     {q: "20. The teacher ___ us a story.", a: "told", b: "tell", c: "A"}
 ];
 
-function checkResult(isCorrect, score) {
-    if (isCorrect) {
-        if (score >= 90) { // Giả sử Excellent là trên 90 điểm
-            // Dừng các âm thanh đang phát để tránh bị đè tiếng
-            this.soundExcellent.pause();
-            this.soundExcellent.currentTime = 0;
-            
-            // Phát tiếng "Yeah" tung hô
-            this.soundExcellent.play();
-            
-            console.log("Hiệu ứng: Excellent! (Yeahhh)");
-        } else {
-            // Các âm thanh thắng lợi bình thường khác (nếu có)
-        }
-    } else {
-        // Giữ nguyên phần "è è" bạn đã thấy ok hôm qua
-        this.soundWrong.pause();
-        this.soundWrong.currentTime = 0;
-        this.soundWrong.play();
-        
-        console.log("Hiệu ứng: Wrong! (è è)");
-    }
-}
-}
-
 function loadQuestion() {
     if (currentQ >= quizData.length) {
         questionEl.innerText = "GAME FINISHED!";
         textA.innerText = "FINAL"; textB.innerText = "SCORE: " + score;
-        msgEl.innerText = "YOU ARE AMAZING! 🏆";
+        msgEl.innerText = "CONGRATULATIONS! 🏆";
         return;
     }
     const data = quizData[currentQ];
@@ -73,6 +51,11 @@ function loadQuestion() {
     textA.innerText = data.a;
     textB.innerText = data.b;
     document.getElementById("progress").innerText = `Question: ${currentQ + 1}/20`;
+    
+    // Đọc câu hỏi tiếng Anh
+    const msg = new SpeechSynthesisUtterance(data.q.replace("___", "blank"));
+    msg.lang = "en-US";
+    window.speechSynthesis.speak(msg);
 }
 
 function handleAnswer(choice) {
@@ -88,13 +71,13 @@ function handleAnswer(choice) {
         selectedBox.style.color = "white";
         msgEl.innerText = "EXCELLENT! 🌟";
         msgEl.style.color = "#2ecc71";
-        speakResult("Yeah! Excellent", true); // MÁY NÓI YEAH EXCELLENT
+        soundCorrect.play().catch(e => console.log("Audio play error")); // Chạy âm thanh đúng
     } else {
         selectedBox.style.background = "#e74c3c";
         selectedBox.style.color = "white";
         msgEl.innerText = "WRONG! ❌";
         msgEl.style.color = "#e74c3c";
-        speakResult("Oh no, wrong", false); // MÁY NÓI WRONG
+        soundWrong.play().catch(e => console.log("Audio play error")); // Chạy âm thanh sai
     }
 
     document.getElementById("score").innerText = `Score: ${score}`;
@@ -102,14 +85,15 @@ function handleAnswer(choice) {
     setTimeout(() => {
         currentQ++;
         msgEl.innerText = "";
-        boxA.style.background = ""; boxB.style.background = "";
-        boxA.style.color = ""; boxB.style.color = "";
+        boxA.style.background = ""; 
+        boxB.style.background = "";
+        boxA.style.color = "";
+        boxB.style.color = "";
         isLock = false;
         loadQuestion();
-    }, 2000);
+    }, 2000); // Tăng thời gian lên 2s để nghe hết tiếng nhạc
 }
 
-// KHỞI TẠO FACEMESH
 const faceMesh = new FaceMesh({
     locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
 });
@@ -121,11 +105,16 @@ faceMesh.setOptions({
 faceMesh.onResults((results) => {
     loading.style.display = "none";
     if (!results.multiFaceLandmarks || isLock) return;
+
     const landmarks = results.multiFaceLandmarks[0];
     const leftEye = landmarks[33];
     const rightEye = landmarks[263];
-    const angle = Math.atan2(rightEye.y - leftEye.y, rightEye.x - leftEye.x) * 180 / Math.PI;
 
+    const dy = rightEye.y - leftEye.y;
+    const dx = rightEye.x - leftEye.x;
+    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+    // Fix ngược bên gương
     if (angle < -12) handleAnswer("B"); 
     if (angle > 12) handleAnswer("A");
 });
@@ -139,13 +128,10 @@ async function init() {
 }
 
 startBtn.onclick = () => {
-    // Đánh thức hệ thống giọng nói ngay khi bấm Start
-    const wakeup = new SpeechSynthesisUtterance("Start");
-    wakeup.volume = 0;
-    window.speechSynthesis.speak(wakeup);
-    
+    // Ép trình duyệt load âm thanh trước
+    soundCorrect.load();
+    soundWrong.load();
     startBtn.style.display = "none";
     init();
     loadQuestion();
 };
-
